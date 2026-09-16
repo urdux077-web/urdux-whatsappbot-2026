@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'wa-bg': '#111b21',
+                        'wa-bg-secondary': '#202c33',
+                        'wa-bg-tertiary': '#2a3942',
+                        'wa-chat-bg': '#0b141a',
+                        'wa-green': '#00a884',
+                        'wa-green-dark': '#005c4b',
+                        'wa-text': '#e9edef',
+                        'wa-text-secondary': '#aebac1',
+                        'wa-text-tertiary': '#667781',
+                        'wa-blue': '#53bdeb',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .messages-bg {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%230b141a" width="100" height="100"/><path d="M20 20 L25 25 L20 30 M25 25 L30 20 M25 25 L30 30" stroke="%23202c33" stroke-width="0.5" fill="none" opacity="0.1"/></svg>');
+        }
+
+        .input-field {
+            resize: none;
+            max-height: 150px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #374248;
+            border-radius: 3px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #4a5b64;
+        }
+
+        @media (max-width: 768px) {
+            .mini-sidebar {
+                display: none;
+            }
+            .chat-area {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 10;
+            }
+            .chat-area.active {
+                display: flex;
+            }
+            /* Voice note audio player styling */
+        .voice-note-player {
+            filter: brightness(0.9) saturate(1.2);
+        }
+
+        .voice-note-player::-webkit-media-controls-panel {
+            background-color: transparent;
+        }
+
+        .voice-note-player::-webkit-media-controls-play-button,
+        .voice-note-player::-webkit-media-controls-current-time-display,
+        .voice-note-player::-webkit-media-controls-time-remaining-display {
+            color: inherit;
+            filter: brightness(1.2);
+        }
+
+        audio::-webkit-media-controls-timeline {
+            border-radius: 20px;
+        }
+        }
+    </style>
+</head>
+<body class="bg-wa-bg overflow-hidden">
+    <div class="h-screen flex">
+        <!-- Mini Sidebar -->
+        <div class="mini-sidebar w-[60px] bg-wa-bg-secondary flex flex-col items-center py-2.5 border-r border-wa-bg-tertiary">
+            <div class="w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors hover:bg-wa-bg-tertiary mb-1 bg-wa-bg-tertiary" data-tab="chats" onclick="switchTab('chats')">
+                <svg class="w-6 h-6 text-wa-green" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z"/>
+                </svg>
+            </div>
+            <div class="w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors hover:bg-wa-bg-tertiary mb-1" data-tab="channels" onclick="switchTab('channels')">
+                <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.8 7.1c-.2-.7-.8-1.3-1.5-1.5C14.5 5.2 12 5.2 12 5.2s-2.5 0-4.3.4c-.7.2-1.3.8-1.5 1.5C5.8 8.9 5.8 12 5.8 12s0 3.1.4 4.9c.2.7.8 1.3 1.5 1.5 1.8.4 4.3.4 4.3.4s2.5 0 4.3-.4c.7-.2 1.3-.8 1.5-1.5.4-1.8.4-4.9.4-4.9s0-3.1-.4-4.9zM10.5 15V9l4.5 3-4.5 3z"/>
+                </svg>
+            </div>
+            <div class="flex-1"></div>
+            <div class="w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer transition-colors hover:bg-wa-bg-tertiary mb-1" onclick="toggleSettingsMenu()">
+                <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+            </div>
+            <div class="w-9 h-9 rounded-full bg-wa-green flex items-center justify-center text-white font-semibold text-sm cursor-pointer">
+                U
+            </div>
+        </div>
+
+        <!-- Chat Sidebar -->
+        <div class="w-full md:w-[400px] bg-wa-bg flex flex-col border-r border-wa-bg-tertiary">
+            <!-- Header -->
+            <div class="h-[60px] bg-wa-bg-secondary px-4 flex items-center justify-between">
+                <h1 class="text-wa-text text-[22px] font-semibold">Chats</h1>
+                <div class="flex gap-2">
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-colors hover:bg-wa-bg-tertiary" onclick="toggleNewChat()">
+                        <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z"/>
+                        </svg>
+                    </div>
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-colors hover:bg-wa-bg-tertiary relative" onclick="toggleMenu(event)">
+                        <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 7c1.104 0 2-.896 2-2s-.896-2-2-2-2 .896-2 2 .896 2 2 2zm0 2c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2zm0 6c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search -->
+            <div class="p-2.5 px-4 bg-wa-bg">
+                <div class="bg-wa-bg-secondary rounded-lg flex items-center px-3 py-2 gap-3">
+                    <svg class="w-5 h-5 text-wa-text-secondary flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.009 13.805h-.636l-.22-.219a5.184 5.184 0 001.256-3.386 5.207 5.207 0 10-5.207 5.208 5.183 5.183 0 003.385-1.255l.221.22v.635l4.004 3.999 1.194-1.195-3.997-4.007zm-4.808 0a3.605 3.605 0 11-.001-7.209 3.605 3.605 0 01.001 7.209z"/>
+                    </svg>
+                    <input type="text" id="searchChats" placeholder="Search or start new chat" class="flex-1 bg-transparent border-none outline-none text-wa-text text-sm placeholder-wa-text-tertiary" oninput="filterChats()">
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="flex gap-2 px-4 py-2 bg-wa-bg">
+                <button class="px-3 py-1.5 rounded-2xl bg-wa-green-dark text-wa-text text-[13px] cursor-pointer transition-all border-none outline-none" onclick="filterByTab('all')">All</button>
+                <button class="px-3 py-1.5 rounded-2xl bg-wa-bg-secondary text-wa-text-secondary text-[13px] cursor-pointer transition-all hover:bg-wa-bg-tertiary border-none outline-none" onclick="filterByTab('unread')">Unread</button>
+                <button class="px-3 py-1.5 rounded-2xl bg-wa-bg-secondary text-wa-text-secondary text-[13px] cursor-pointer transition-all hover:bg-wa-bg-tertiary border-none outline-none" onclick="filterByTab('groups')">Groups</button>
+            </div>
+
+            <!-- Chat List -->
+            <div class="flex-1 overflow-y-auto bg-wa-bg scrollbar-custom" id="chatList">
+                <div class="text-center py-10 px-5 text-wa-text-tertiary">
+                    <p>Loading conversations...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col bg-wa-chat-bg" id="chatArea">
+            <div class="flex-1 flex flex-col items-center justify-center text-center p-10">
+                <div class="w-[200px] h-[200px] mb-8 border-8 border-wa-bg-tertiary rounded-full flex items-center justify-center">
+                    <svg class="w-[100px] h-[100px] text-[#4a5b64]" viewBox="0 0 303 172" fill="currentColor">
+                        <path d="M117.1 17.5c-9.9 3.9-17.9 11.8-21.8 21.8l-2.8 7.2v64c0 72 .6 66.2-7.6 75.9-4.6 5.4-10.2 9.1-17 11.2l-5.4 1.7H45.9l-5.4-1.7c-6.8-2.1-12.4-5.8-17-11.2C15.3 177.2 14.7 183 14.7 111v-64l-2.8-7.2c-3.9-10-11.9-17.9-21.8-21.8L-17.1 15v143.5l7.2 2.8c10 3.9 17.9 11.8 21.8 21.8l2.8 7.2h235.2l2.8-7.2c3.9-10 11.8-17.9 21.8-21.8l7.2-2.8V15l-7.2 2.8c-9.9 3.9-17.9 11.8-21.8 21.8l-2.8 7.2v64c0 72-.6 66.2-7.6 75.9-4.6 5.4-10.2 9.1-17 11.2l-5.4 1.7h-16.6l-5.4-1.7c-6.8-2.1-12.4-5.8-17-11.2-8.2-9.7-7.6-3.9-7.6-75.9v-64l-2.8-7.2c-3.9-10-11.9-17.9-21.8-21.8L117.1 15v2.5z"/>
+                    </svg>
+                </div>
+                <h2 class="text-wa-text text-[32px] font-light mb-4">WhatsApp Business</h2>
+                <p class="text-wa-text-tertiary text-sm leading-5 max-w-[480px]">Send and receive messages without keeping your phone online.<br>Use WhatsApp on up to 4 linked devices and 1 phone at the same time.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dropdown Menu -->
+    <div class="fixed bg-[#233138] rounded shadow-lg z-[100] hidden min-w-[200px]" id="mainMenu" style="top: 50px; right: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+        <div class="py-2">
+            <div class="px-6 py-3 text-wa-text text-sm cursor-pointer flex items-center gap-3 hover:bg-wa-bg-tertiary">
+                <svg class="w-5 h-5 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>New group</span>
+            </div>
+            <div class="px-6 py-3 text-wa-text text-sm cursor-pointer flex items-center gap-3 hover:bg-wa-bg-tertiary">
+                <svg class="w-5 h-5 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+                <span>New contact</span>
+            </div>
+            <div class="px-6 py-3 text-wa-text text-sm cursor-pointer flex items-center gap-3 hover:bg-wa-bg-tertiary">
+                <svg class="w-5 h-5 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                </svg>
+                <span>New community</span>
+            </div>
+            <div class="px-6 py-3 text-wa-text text-sm cursor-pointer flex items-center gap-3 hover:bg-wa-bg-tertiary">
+                <svg class="w-5 h-5 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                </svg>
+                <span>Starred messages</span>
+            </div>
+            <div class="px-6 py-3 text-wa-text text-sm cursor-pointer flex items-center gap-3 hover:bg-wa-bg-tertiary">
+                <svg class="w-5 h-5 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+                <span>Settings</span>
+            </div>
+            <div class="px-6 py-3 text-wa-text text-sm cursor-pointer flex items-center gap-3 hover:bg-wa-bg-tertiary" onclick="logout()">
+                <svg class="w-5 h-5 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                </svg>
+                <span>Log out</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let allUsers = [];
+        let messagePollingInterval = null;
+        let currentFilter = 'all';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            setInterval(loadUsers, 10000);
+        });
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/users');
+                allUsers = await response.json();
+                displayUsers(allUsers);
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function displayUsers(users) {
+            const chatList = document.getElementById('chatList');
+            
+            if (users.length === 0) {
+                chatList.innerHTML = `
+                    <div class="text-center py-10 px-5 text-wa-text-tertiary">
+                        <svg class="w-16 h-16 mx-auto mb-4 opacity-30" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+                        </svg>
+                        <p>No conversations yet</p>
+                        <p class="text-[13px] mt-2">Start chatting by sending a message</p>
+                    </div>
+                `;
+                return;
+            }
+
+            chatList.innerHTML = users.map(user => {
+                const initial = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+                const lastMessageTime = formatTime(user.last_message);
+                const isActive = currentUser && currentUser.phone_number === user.phone_number;
+                
+                return `
+                    <div class="h-[72px] px-4 py-2.5 flex items-center gap-3 cursor-pointer border-b border-wa-bg-secondary transition-colors hover:bg-wa-bg-secondary ${isActive ? 'bg-wa-bg-tertiary' : ''}" onclick="selectUser('${user.phone_number}')">
+                        <div class="w-12 h-12 rounded-full bg-wa-green flex items-center justify-center text-white font-semibold text-lg flex-shrink-0">${initial}</div>
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <span class="text-wa-text text-base overflow-hidden text-ellipsis whitespace-nowrap">${user.name}</span>
+                                <span class="text-wa-text-tertiary text-xs flex-shrink-0 ml-2">${lastMessageTime}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-wa-text-tertiary text-sm overflow-hidden text-ellipsis whitespace-nowrap flex-1">${user.phone_number}</span>
+                                ${user.unread_count > 0 ? `<span class="bg-wa-green text-wa-bg text-xs font-semibold px-1.5 py-0.5 rounded-xl min-w-[20px] text-center flex-shrink-0 ml-2">${user.unread_count}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function selectUser(phoneNumber) {
+            currentUser = allUsers.find(u => u.phone_number === phoneNumber);
+            
+            if (!currentUser) return;
+
+            document.getElementById('chatArea').classList.add('active');
+
+            const initial = currentUser.name.charAt(0).toUpperCase();
+            const chatArea = document.getElementById('chatArea');
+            
+            chatArea.innerHTML = `
+                <div class="h-[60px] bg-wa-bg-secondary px-4 flex items-center justify-between border-l border-wa-bg-tertiary">
+                    <div class="flex items-center gap-3">
+                        <div class="hidden md:hidden back-btn w-10 h-10 items-center justify-center cursor-pointer rounded-full hover:bg-wa-bg-tertiary" onclick="closeChatArea()">
+                            <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+                            </svg>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-wa-green flex items-center justify-center text-white font-semibold">${initial}</div>
+                        <div class="flex flex-col">
+                            <div class="text-wa-text text-base">${currentUser.name}</div>
+                            <div class="text-wa-text-tertiary text-[13px]">${currentUser.phone_number}</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-colors hover:bg-wa-bg-tertiary">
+                            <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                            </svg>
+                        </div>
+                        <div class="w-10 h-10 flex items-center justify-center rounded-full cursor-pointer transition-colors hover:bg-wa-bg-tertiary">
+                            <svg class="w-6 h-6 text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 7c1.104 0 2-.896 2-2s-.896-2-2-2-2 .896-2 2 .896 2 2 2zm0 2c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2zm0 6c-1.104 0-2 .896-2 2s.896 2 2 2 2-.896 2-2-.896-2-2-2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-[60px] py-5 messages-bg scrollbar-custom" id="messagesContainer"></div>
+                <div class="p-2.5 px-4 bg-wa-bg-secondary flex items-end gap-2">
+                    <div class="w-11 h-11 flex items-center justify-center rounded-full cursor-pointer transition-colors hover:bg-wa-bg-tertiary flex-shrink-0">
+                        <svg class="w-[26px] h-[26px] text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                        </svg>
+                    </div>
+                    <div class="w-11 h-11 flex items-center justify-center rounded-full cursor-pointer transition-colors hover:bg-wa-bg-tertiary flex-shrink-0">
+                        <svg class="w-[26px] h-[26px] text-wa-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 bg-wa-bg-tertiary rounded-lg flex items-end px-3 py-2.5 gap-2 min-h-[44px]">
+                        <textarea 
+                            id="messageInput"
+                            class="flex-1 bg-transparent border-none outline-none text-wa-text text-[15px] input-field leading-5 scrollbar-custom"
+                            placeholder="Type a message"
+                            rows="1"
+                            onkeydown="handleKeyPress(event)"
+                            oninput="autoResize(this)"
+                        ></textarea>
+                    </div>
+                    <div class="w-11 h-11 flex items-center justify-center rounded-full bg-wa-green cursor-pointer transition-colors hover:bg-[#06cf9c] flex-shrink-0" onclick="sendMessage()">
+                        <svg class="w-6 h-6 text-wa-bg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </div>
+                </div>
+            `;
+
+            await loadMessages(phoneNumber);
+
+            if (messagePollingInterval) {
+                clearInterval(messagePollingInterval);
+            }
+            // Longer polling interval to avoid interrupting media playback
+messagePollingInterval = setInterval(() => {
+    // Check if any audio or video is currently playing
+    const playingAudio = Array.from(document.querySelectorAll('audio')).find(a => !a.paused);
+    const playingVideo = Array.from(document.querySelectorAll('video')).find(v => !v.paused);
+    
+    // Only reload messages if no media is playing
+    if (!playingAudio && !playingVideo) {
+        loadMessages(phoneNumber, true);
+    }
+}, 5000);
+// Pause message polling when audio is playing
+document.addEventListener('play', (e) => {
+    if (e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO') {
+        if (messagePollingInterval) {
+            clearInterval(messagePollingInterval);
+            console.log('⏸️ Paused message polling during media playback');
+        }
+    }
+}, true);
+
+// Resume message polling when audio ends or is paused
+document.addEventListener('ended', (e) => {
+    if ((e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO') && currentUser) {
+        if (!messagePollingInterval) {
+            messagePollingInterval = setInterval(() => loadMessages(currentUser.phone_number, true), 5000);
+            console.log('▶️ Resumed message polling');
+        }
+    }
+}, true);
+
+document.addEventListener('pause', (e) => {
+    if ((e.target.tagName === 'AUDIO' || e.target.tagName === 'VIDEO') && currentUser) {
+        if (!messagePollingInterval) {
+            messagePollingInterval = setInterval(() => loadMessages(currentUser.phone_number, true), 5000);
+            console.log('▶️ Resumed message polling');
+        }
+    }
+}, true);
+
+            setTimeout(loadUsers, 500);
+        }
+
+async function loadMessages(phoneNumber, silent = false) {
+    try {
+        const response = await fetch(`/api/messages/${phoneNumber}`);
+        const messages = await response.json();
+        
+        const messagesContainer = document.getElementById('messagesContainer');
+        if (!messagesContainer) return;
+
+        const wasAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop <= messagesContainer.clientHeight + 100;
+
+        // Store currently playing audio states BEFORE updating DOM
+        const playingAudios = new Map();
+        messagesContainer.querySelectorAll('audio').forEach((audio, index) => {
+            if (!audio.paused) {
+                playingAudios.set(audio.src, {
+                    currentTime: audio.currentTime,
+                    playing: true
+                });
+            }
+        });
+
+        const groupedMessages = groupMessagesByDate(messages);
+
+        messagesContainer.innerHTML = Object.keys(groupedMessages).map(date => {
+            const dateMessages = groupedMessages[date];
+            return `
+                <div class="text-center my-5">
+                    <span class="bg-[#182229] text-wa-text px-3 py-1.5 rounded-lg text-[12.5px] inline-block shadow-sm">${date}</span>
+                </div>
+                ${dateMessages.map(msg => renderMessage(msg)).join('')}
+            `;
+        }).join('');
+
+        // Restore audio player states AFTER DOM update
+        if (playingAudios.size > 0) {
+            messagesContainer.querySelectorAll('audio').forEach(audio => {
+                const state = playingAudios.get(audio.src);
+                if (state && state.playing) {
+                    audio.currentTime = state.currentTime;
+                    audio.play().catch(e => console.log('Audio resume failed:', e));
+                }
+            });
+        }
+
+        if (!silent || wasAtBottom) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    } catch (error) {
+        console.error('Error loading messages:', error);
+    }
+}
+
+        function groupMessagesByDate(messages) {
+            const groups = {};
+            messages.forEach(msg => {
+                const date = new Date(msg.timestamp);
+                const dateKey = formatDateDivider(date);
+                if (!groups[dateKey]) {
+                    groups[dateKey] = [];
+                }
+                groups[dateKey].push(msg);
+            });
+            return groups;
+        }
+
+    function renderMessage(msg) {
+        const time = new Date(msg.timestamp).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        const isOutgoing = msg.direction === 'outgoing';
+        
+        let content = '';
+        
+        if (msg.message_type === 'text') {
+            content = `<div class="text-wa-text text-[14.2px] leading-[19px] break-words whitespace-pre-wrap">${escapeHtml(msg.content)}</div>`;
+        } 
+else if (msg.message_type === 'audio') {
+    if (msg.media_url) {
+        content = `
+            <div class="flex items-center gap-3 p-2 bg-${isOutgoing ? '[#005c4b]' : 'wa-bg-tertiary'} rounded-lg min-w-[260px]">
+                <div class="flex-shrink-0">
+                    <svg class="w-5 h-5 ${isOutgoing ? 'text-white' : 'text-wa-green'}" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <audio controls class="w-full voice-note-player" style="height: 32px;" preload="metadata">
+                        <source src="${msg.media_url}" type="audio/ogg; codecs=opus">
+                        <source src="${msg.media_url}" type="audio/ogg">
+                        <source src="${msg.media_url}" type="audio/mpeg">
+                        <source src="${msg.media_url}" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            </div>
+        `;
+    } else {
+        content = `
+            <div class="flex items-center gap-3 p-2">
+                <svg class="w-5 h-5 text-wa-text-tertiary" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                </svg>
+                <span class="text-wa-text-tertiary text-sm">🔊 ${escapeHtml(msg.content)}</span>
+            </div>
+        `;
+    }
+}
+        else if (msg.message_type === 'image') {
+            if (msg.media_url) {
+                content = `
+                    <div class="p-1">
+                        <img src="${msg.media_url}" alt="Image" class="max-w-[300px] max-h-[300px] rounded-lg cursor-pointer object-cover" onclick="window.open('${msg.media_url}', '_blank')">
+                        ${msg.content && msg.content !== '📷 Image' ? `<div class="text-wa-text text-sm mt-2">${escapeHtml(msg.content.replace('📷 Image: ', ''))}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                content = `
+                    <div class="p-1">
+                        <div class="w-[200px] h-[200px] bg-wa-bg-tertiary rounded-lg flex items-center justify-center">
+                            <svg class="w-12 h-12 text-wa-text-tertiary" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        else if (msg.message_type === 'video') {
+            if (msg.media_url) {
+                content = `
+                    <div class="p-1">
+                        <video controls class="max-w-[300px] max-h-[300px] rounded-lg">
+                            <source src="${msg.media_url}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        ${msg.content && msg.content !== '🎥 Video' ? `<div class="text-wa-text text-sm mt-2">${escapeHtml(msg.content.replace('🎥 Video: ', ''))}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                content = `
+                    <div class="p-1">
+                        <div class="w-[200px] h-[200px] bg-wa-bg-tertiary rounded-lg flex items-center justify-center">
+                            <svg class="w-12 h-12 text-wa-text-tertiary" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        else if (msg.message_type === 'document') {
+            if (msg.media_url) {
+                const fileName = msg.content.replace('📄 ', '');
+                content = `
+                    <div class="flex items-center gap-3 p-2 cursor-pointer" onclick="window.open('${msg.media_url}', '_blank')">
+                        <div class="w-12 h-12 bg-wa-green rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-wa-text font-medium">${escapeHtml(fileName)}</div>
+                            <div class="text-xs ${isOutgoing ? 'text-[#8696a0]' : 'text-wa-text-tertiary'} mt-0.5">Click to download</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                content = `
+                    <div class="flex items-center gap-3 p-2">
+                        <div class="w-12 h-12 bg-wa-green rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="font-medium">${escapeHtml(msg.content)}</div>
+                            <div class="text-xs text-wa-text-tertiary mt-0.5">Document</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        else {
+            content = `<div class="text-wa-text text-[14.2px] leading-[19px] break-words whitespace-pre-wrap">${escapeHtml(msg.content)}</div>`;
+        }
+        
+        return `
+            <div class="mb-3 flex ${isOutgoing ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[65%] px-2 pt-1.5 pb-2 pl-2.5 rounded-lg relative shadow-sm ${isOutgoing ? 'bg-wa-green-dark rounded-tr-none' : 'bg-wa-bg-secondary rounded-tl-none'}">
+                    ${content}
+                    <div class="flex items-center justify-end gap-1 mt-1 float-right ml-2">
+                        <span class="${isOutgoing ? 'text-[#8696a0]' : 'text-wa-text-tertiary'} text-[11px]">${time}</span>
+                        ${isOutgoing ? `
+                            <svg class="w-4 h-4 ${msg.read ? 'text-wa-blue' : 'text-[#8696a0]'}" viewBox="0 0 16 15" fill="currentColor">
+                                <path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.88a.32.32 0 0 1-.484.032l-.358-.325a.32.32 0 0 0-.484.032l-.378.48a.418.418 0 0 0 .036.54l1.32 1.267a.32.32 0 0 0 .484-.034l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.88a.32.32 0 0 1-.484.032L1.892 7.77a.366.366 0 0 0-.516.005l-.423.433a.364.364 0 0 0 .006.514l3.255 3.185a.32.32 0 0 0 .484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z"/>
+                            </svg>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message || !currentUser) return;
+
+            try {
+                const response = await fetch('/api/send-message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone_number: currentUser.phone_number,
+                        message: message
+                    })
+                });
+
+                if (response.ok) {
+                    messageInput.value = '';
+                    messageInput.style.height = 'auto';
+                    await loadMessages(currentUser.phone_number);
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+        }
+
+        function filterChats() {
+            const searchTerm = document.getElementById('searchChats').value.toLowerCase();
+            let filtered = allUsers;
+            
+            if (searchTerm) {
+                filtered = allUsers.filter(user => 
+                    user.name.toLowerCase().includes(searchTerm) || 
+                    user.phone_number.includes(searchTerm)
+                );
+            }
+            
+            if (currentFilter === 'unread') {
+                filtered = filtered.filter(user => user.unread_count > 0);
+            } else if (currentFilter === 'groups') {
+                filtered = [];
+            }
+            
+            displayUsers(filtered);
+        }
+
+        function filterByTab(filter) {
+            currentFilter = filter;
+            
+            document.querySelectorAll('.filter-tabs button').forEach((tab, index) => {
+                if ((filter === 'all' && index === 0) || 
+                    (filter === 'unread' && index === 1) || 
+                    (filter === 'groups' && index === 2)) {
+                    tab.className = 'px-3 py-1.5 rounded-2xl bg-wa-green-dark text-wa-text text-[13px] cursor-pointer transition-all border-none outline-none';
+                } else {
+                    tab.className = 'px-3 py-1.5 rounded-2xl bg-wa-bg-secondary text-wa-text-secondary text-[13px] cursor-pointer transition-all hover:bg-wa-bg-tertiary border-none outline-none';
+                }
+            });
+            
+            filterChats();
+        }
+
+        function closeChatArea() {
+            document.getElementById('chatArea').classList.remove('active');
+            if (messagePollingInterval) {
+                clearInterval(messagePollingInterval);
+            }
+        }
+
+        function toggleMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('mainMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        function toggleNewChat() {
+            alert('New chat feature - Open contact selector');
+        }
+
+        function toggleSettingsMenu() {
+            alert('Settings menu');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.mini-sidebar > div[data-tab]').forEach(item => {
+                const svg = item.querySelector('svg');
+                if (item.dataset.tab === tab) {
+                    item.classList.add('bg-wa-bg-tertiary');
+                    svg.classList.remove('text-wa-text-secondary');
+                    svg.classList.add('text-wa-green');
+                } else {
+                    item.classList.remove('bg-wa-bg-tertiary');
+                    svg.classList.remove('text-wa-green');
+                    svg.classList.add('text-wa-text-secondary');
+                }
+            });
+            
+            if (tab === 'channels') {
+                alert('Channels feature not implemented');
+            }
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                window.location.href = '/logout';
+            }
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (days === 0) {
+                return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            } else if (days === 1) {
+                return 'Yesterday';
+            } else if (days < 7) {
+                return date.toLocaleDateString('en-US', { weekday: 'short' });
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' });
+            }
+        }
+
+        function formatDateDivider(date) {
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (days === 0) {
+                return 'Today';
+            } else if (days === 1) {
+                return 'Yesterday';
+            } else if (days < 7) {
+                return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            } else {
+                return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('click', () => {
+            document.getElementById('mainMenu').classList.add('hidden');
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (messagePollingInterval) {
+                clearInterval(messagePollingInterval);
+            }
+        });
+    </script>
+</body>
+</html>

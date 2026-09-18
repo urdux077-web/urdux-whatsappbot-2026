@@ -244,35 +244,43 @@ def chat_bot():
 # Voice Bot API (OpenAI Realtime) - UPDATED WITH SYSTEM PROMPT
 # -------------------------
 
+def mint_realtime_client_secret():
+    """Mint an ephemeral client secret via the GA Realtime API (replaces the
+    retired POST /v1/realtime/sessions beta flow)."""
+    resp = requests.post(
+        "https://api.openai.com/v1/realtime/client_secrets",
+        headers={
+            "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
+            "Content-Type": "application/json",
+        },
+        json={
+            "session": {
+                "type": "realtime",
+                "model": "gpt-realtime-mini",
+                "instructions": SYSTEM_PROMPT,
+                "audio": {"output": {"voice": "alloy"}},
+            }
+        },
+        timeout=15,
+    )
+    data = resp.json()
+    if resp.status_code != 200:
+        raise RuntimeError(data)
+    return data["value"]
+
+
 @app.route("/api/voice/session", methods=["POST"])
 
 def create_voice_session():
-    """Create OpenAI Realtime API session token with UrduX system instructions"""
+    """Create OpenAI Realtime API ephemeral client secret with UrduX system instructions"""
 
     try:
-
-        # Create ephemeral token for client-side Realtime API with instructions
-
-        response = client.sessions.create(
-
-            model="gpt-4o-mini-realtime-preview-2024-12-17",
-
-            voice="alloy",
-
-            instructions=SYSTEM_PROMPT,  # ADD SYSTEM PROMPT HERE
-
-            modalities=["text", "audio"],
-
-            temperature=0.7
-
-        )
+        client_secret = mint_realtime_client_secret()
         return jsonify({
 
             "success": True,
 
-            "session_id": response.id,
-
-            "client_secret": response.client_secret.value,
+            "client_secret": client_secret,
 
             "instructions": SYSTEM_PROMPT  # Also send to frontend for reference
 
@@ -290,15 +298,21 @@ def create_voice_session():
 
 def get_voice_token():
 
-    """Get OpenAI API key and system prompt for Realtime API (client-side usage)"""
+    """Get an ephemeral Realtime client secret for client-side WebRTC usage.
+
+    NOTE: this used to return the raw OPENAI_API_KEY, which let anyone who
+    called this endpoint steal the real key. It now returns a short-lived
+    ephemeral secret instead, same as /api/voice/session."""
 
     try:
+
+        client_secret = mint_realtime_client_secret()
 
         return jsonify({
 
             "success": True,
 
-            "api_key": os.getenv("OPENAI_API_KEY"),
+            "client_secret": client_secret,
 
             "instructions": SYSTEM_PROMPT  # Send system prompt to frontend
 
